@@ -10,11 +10,13 @@ Only the standard library is used so this works before heavy deps are installed.
 from __future__ import annotations
 
 import io
+import os
 import shutil
 import time
 import urllib.error
 import urllib.request
 import zipfile
+import zlib
 from pathlib import Path
 
 USER_AGENT = "cuneiform-period-classifier/0.1 (research prototype)"
@@ -101,12 +103,40 @@ def list_remote_zip(url: str) -> list[dict]:
         ]
 
 
+class CorruptDownloadError(OSError):
+    """The file written to disk does not match the archive's size/CRC. Safe to retry."""
+
+
+def file_crc32(path: Path, chunk: int = 8 << 20) -> int:
+    crc = 0
+    with open(path, "rb") as handle:
+        while block := handle.read(chunk):
+            crc = zlib.crc32(block, crc)
+    return crc & 0xFFFFFFFF
+
+
 def extract_remote_member(url: str, member: str, destination: Path) -> Path:
-    """Stream one member of a remote zip to ``destination`` atomically (via a .part file)."""
+    """Stream one member of a remote zip to ``destination`` atomically (via a .part file).
+
+    The file is re-read from disk and checked against the archive's CRC-32 and size
+    before it is renamed into place, so a corrupt write (seen on a low-memory Windows
+    machine) never reaches the preprocessing step.
+    """
     destination.parent.mkdir(parents=True, exist_ok=True)
     partial = destination.with_suffix(destination.suffix + ".part")
-    with open_remote_zip(url) as archive, archive.open(member) as source, open(partial, "wb") as sink:
-        shutil.copyfileobj(source, sink, length=8 << 20)
+    with open_remote_zip(url) as archive:
+        info = archive.getinfo(member)
+        with archive.open(member) as source, open(partial, "wb") as sink:
+            shutil.copyfileobj(source, sink, length=8 << 20)
+            sink.flush()
+            os.fsync(sink.fileno())
+    size, crc = partial.stat().st_size, file_crc32(partial)
+    if size != info.file_size or crc != info.CRC:
+        partial.unlink(missing_ok=True)
+        raise CorruptDownloadError(
+            f"{member}: written file does not match archive (size {size} vs {info.file_size}, "
+            f"crc {crc:08x} vs {info.CRC:08x}); it was deleted and will be re-downloaded"
+        )
     _replace_with_retry(partial, destination)
     return destination
 

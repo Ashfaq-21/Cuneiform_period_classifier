@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import logging
 import random
+import threading
 from collections import Counter
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
@@ -26,6 +27,16 @@ from cuneiform.geometry.depth_map import scan_to_face_depth_maps
 from cuneiform.geometry.mesh_io import InvalidScanError
 
 log = logging.getLogger(__name__)
+
+
+# Downloads run in parallel threads, but only one mesh is loaded/ray-cast at a time.
+# Parallel Open3D loads of large scans exhausted RAM on an 8 GB machine and crashed the process.
+_MESH_PROCESSING_LOCK = threading.Lock()
+
+
+def _looks_like_ply(path: Path) -> bool:
+    with open(path, "rb") as handle:
+        return handle.read(3) == b"ply"
 
 
 def resolve_scan_path(local_path: str) -> Path:
@@ -102,15 +113,22 @@ def _process_one(
 ) -> str:
     """Download (if needed) and render one tablet. Returns the cache path; raises on failure."""
     scan_path = resolve_scan_path(row.local_path)
+    downloadable = row.source == heicubeda.SOURCE_NAME and index is not None
+    if scan_path.exists() and downloadable and not _looks_like_ply(scan_path):
+        # A previously downloaded file is damaged: fetch it again instead of blaming the scan.
+        log.warning("%s: %s is not a valid PLY file; re-downloading", row.tablet_id, scan_path.name)
+        scan_path.unlink()
     if not scan_path.exists():
-        if row.source != heicubeda.SOURCE_NAME or index is None:
+        if not downloadable:
             raise InvalidScanError(f"scan file not found: {scan_path}")
         if row.tablet_id not in index:
             raise InvalidScanError(f"{row.tablet_id} is not in the HeiCuBeDa zip index")
         heicubeda.download_scan(index[row.tablet_id], scan_path)
-    maps = scan_to_face_depth_maps(
-        scan_path, config.preprocessing.resolution, config.preprocessing.margin_fraction
-    )
+    # Loading + ray casting a 1-2 GB mesh needs several GB of RAM: one at a time.
+    with _MESH_PROCESSING_LOCK:
+        maps = scan_to_face_depth_maps(
+            scan_path, config.preprocessing.resolution, config.preprocessing.margin_fraction
+        )
     cache.save(row.tablet_id, maps)
     # Only delete scans we can download again; never delete user-supplied local files.
     if not keep_raw and config.dataset.delete_raw_after_processing and row.source == heicubeda.SOURCE_NAME:

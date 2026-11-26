@@ -1,4 +1,4 @@
-# 3D Cuneiform Tablet Period Classifier
+﻿# 3D Cuneiform Tablet Period Classifier
 
 Predicts the historical period of a cuneiform tablet, **Ur III** (ca. 2100-2000 BC) or
 **Old Babylonian** (ca. 1900-1600 BC), from a real 3D scan. Each scan is oriented
@@ -9,20 +9,20 @@ period, model confidence, and a **Grad-CAM** overlay of the regions that influen
 Data: [HeiCuBeDa Hilprecht](https://doi.org/10.11588/data/IE8CCN) (1,977 scans,
 CC BY-SA 4.0), with period labels from CDLI in the dataset's metadata. See [data/README.md](data/README.md).
 
-**Docs:** [progress](docs/PROGRESS.md) · [overview & purpose](docs/OVERVIEW.md) ·
-[architecture](docs/ARCHITECTURE.md) · [how to run](docs/RUNNING.md)
+**Docs:** [progress](docs/PROGRESS.md) Â· [overview & purpose](docs/OVERVIEW.md) Â·
+[architecture](docs/ARCHITECTURE.md) Â· [how to run](docs/RUNNING.md)
 
 <!-- RESULTS -->
 
 ## How it works
 
 ```
-.ply scan ──► PCA pose ──► Open3D ray casting ──► depth map (256², mm) ──► cache (.npz)
-                                                                        │
-             depth / relief / mask channels  ◄──────────────────────────┘
-                         │                         (same function in training and inference)
-                         ▼
-                 ResNet18 (ImageNet init) ──► P(period)  +  Grad-CAM on layer4
+.ply scan â”€â”€â–º PCA pose â”€â”€â–º Open3D ray casting â”€â”€â–º depth map (256Â², mm) â”€â”€â–º cache (.npz)
+                                                                        â”‚
+             depth / relief / mask channels  â—„â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
+                         â”‚                         (same function in training and inference)
+                         â–¼
+                 ResNet18 (ImageNet init) â”€â”€â–º P(period)  +  Grad-CAM on layer4
 ```
 
 1. **Orientation** ([geometry/orientation.py](src/cuneiform/geometry/orientation.py)):
@@ -34,7 +34,7 @@ CC BY-SA 4.0), with period labels from CDLI in the dataset's metadata. See [data
 3. **Model input** ([geometry/representation.py](src/cuneiform/geometry/representation.py)):
    three channels: normalised height (shape), local relief (height minus a Gaussian-smoothed surface, which captures wedges), and tablet mask.
 4. **Training** ([modeling/train.py](src/cuneiform/modeling/train.py)): ResNet18 with ImageNet weights,
-   AdamW with a cosine schedule, augmentation by 180° and ±10° rotation and ±10% scale (no mirroring),
+   AdamW with a cosine schedule, augmentation by 180Â° and Â±10Â° rotation and Â±10% scale (no mirroring),
    a fixed seed, and the epoch with the best **validation** macro F1 kept.
 5. **Evaluation** ([modeling/evaluate.py](src/cuneiform/modeling/evaluate.py)): accuracy, macro F1 and a confusion
    matrix on the **test** split, against a majority-class baseline, one prediction per tablet.
@@ -78,7 +78,7 @@ Replace the CPU PyTorch with a CUDA build *after* the step above, then check it:
 # 3. Download each scan (range request into the archive), render depth maps, cache them.
 #    Resumable: re-run the same command after an interruption. ~40 GB of traffic, about 2 hours at 3-10 MB/s.
 #    Raw scans are deleted after caching (dataset.delete_raw_after_processing).
-.\.venv\Scripts\python.exe -m cuneiform.cli prepare --workers 6
+.\.venv\Scripts\python.exe -m cuneiform.cli prepare --workers 4
 .\.venv\Scripts\python.exe -m cuneiform.cli summarize            # class counts per split + cache status
 .\.venv\Scripts\python.exe -m cuneiform.cli preview HS_1030      # PNG of one tablet's depth maps
 
@@ -130,7 +130,7 @@ tests/                   depth maps, split isolation, inference contract (synthe
 
 ### Extension points
 
-* **New period / label set**: edit `labels:` in the config (class name → exact CDLI period strings), then
+* **New period / label set**: edit `labels:` in the config (class name â†’ exact CDLI period strings), then
   `build-manifest`, `prepare` and `train`. The class order in the config is the model's output order and is saved in the bundle.
 * **New surface representation** (normals, curvature, MSII values): add a channel function in
   `geometry/representation.py` and its name to `InputChannel` in `config.py`. Training and inference both pick it up.

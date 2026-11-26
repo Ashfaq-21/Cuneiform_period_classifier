@@ -16,7 +16,22 @@ write the new one, and refresh **Next** and **Blocked**.
 
 ## Last accomplishment
 
-**2026-11-26, 20:30. Thin end-to-end flow verified on real scans.**
+**2026-11-26, 21:16. Made data preparation robust after a crash and a corrupt download.**
+
+* **What happened:** the first full `prepare` run (6 workers) crashed natively (exit code 5, the low byte of
+  0xC0000005) after 127 tablets. One downloaded scan (HS_1105) had its first 48 MiB zeroed on disk and was wrongly
+  logged as an invalid scan. Cause: this machine has 7.7 GB RAM, and 6 threads were loading meshes of up to 1.1 GB in Open3D at the same time.
+* **Fixes:**
+  1. Every download is re-read from disk and checked against the archive's CRC-32 and size before use.
+  2. A damaged raw file is re-downloaded rather than logged as invalid.
+  3. Downloads stay parallel, but only one mesh is loaded and ray-cast at a time.
+* **Verified:** HS_1105 now downloads, passes the CRC check and renders. Audited all 130 cached maps (tablet extent 21-166 mm,
+  thickness 7-36 mm). The only outlier, HS_1446, is a genuinely large 16.5 cm tablet per the dataset's own bounding box.
+* Full `prepare` restarted with `--workers 4`.
+
+### Previous: thin end-to-end flow verified on real scans
+
+**2026-11-26, 20:30.**
 
 * Ran a 3-epoch smoke training on the GPU with the tablets cached so far (23 train / 44 val). The bundle
   `artifacts/models/smoke_partial_data` was saved. This is a plumbing check only, *not* a result.

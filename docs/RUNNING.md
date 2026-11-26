@@ -1,4 +1,4 @@
-# How to run (Windows PowerShell)
+﻿# How to run (Windows PowerShell)
 
 Run every command from the repository root
 (`C:\Users\Admin\Documents\personal projects\cuneiform`). Requires Python 3.10-3.12.
@@ -33,7 +33,7 @@ This gives a CPU-only PyTorch. Everything works on CPU, and training is just slo
 
 # Download scans one by one, render depth maps, cache them. ~40 GB of traffic, about 2 h.
 # Safe to stop (Ctrl+C) and re-run: finished tablets are skipped.
-.\.venv\Scripts\python.exe -m cuneiform.cli prepare --workers 6
+.\.venv\Scripts\python.exe -m cuneiform.cli prepare --workers 4
 
 # Check class counts per split and how many depth maps exist
 .\.venv\Scripts\python.exe -m cuneiform.cli summarize
@@ -41,6 +41,9 @@ This gives a CPU-only PyTorch. Everything works on CPU, and training is just slo
 # Look at one tablet's depth maps (writes artifacts\previews\HS_1030.png)
 .\.venv\Scripts\python.exe -m cuneiform.cli preview HS_1030
 ```
+
+`--workers` sets parallel *downloads* only. Mesh processing runs one scan at a time, because a large scan needs several GB of RAM.
+Every download is checked against the archive's CRC before use.
 
 Useful `prepare` options: `--limit 10` (try a few first), `--tablet HS_1030` (one tablet),
 `--keep-raw` (keep the downloaded `.ply`), `--retry-invalid` (retry scans in `invalid_scans.csv`).
