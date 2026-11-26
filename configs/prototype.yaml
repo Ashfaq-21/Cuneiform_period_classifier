@@ -1,0 +1,46 @@
+# Single source of truth for the prototype. Validated by cuneiform.config.ProjectConfig.
+# Relative paths resolve against the repository root (the parent of configs/).
+
+paths:
+  raw_dir: data/raw                 # downloaded scans (HeiCuBeDa) or your local .ply files
+  metadata_json: data/raw/heicubeda/HeiCuBeDa_B_Hilprecht_Database_240121.json
+  zip_index: data/raw/heicubeda/zip_index.json
+  manifest: data/manifest.csv       # tablet_id, period, source, local_path, split
+  processed_dir: data/processed     # cached depth maps, keyed by preprocessing settings
+  artifacts_dir: artifacts          # model bundles and evaluation outputs
+
+# Class label -> exact CDLI period strings that map to it. Everything else is excluded.
+labels:
+  Ur III:
+    - "Ur III (ca. 2100-2000 BC)"
+  Old Babylonian:
+    - "Old Babylonian (ca. 1900-1600 BC)"
+    - "Old Babylonian"
+
+dataset:
+  max_tablets_per_class: 150        # cap downloads (each scan is ~100-250 MB compressed)
+  delete_raw_after_processing: true # keep only the small depth maps once cached
+  split_fractions: {train: 0.7, val: 0.15, test: 0.15}
+  seed: 13
+
+preprocessing:
+  resolution: 256                   # depth map is resolution x resolution pixels
+  faces: [primary]                  # which face(s) to render: primary, secondary
+  margin_fraction: 0.04             # empty border around the tablet
+  # Model input channels derived from the cached depth map (same code in train + inference):
+  #   depth  = height normalised to [0, 1] (overall shape / curvature)
+  #   relief = depth minus a Gaussian-smoothed surface (wedges / inscription)
+  #   mask   = 1 where the ray hit the tablet
+  input_channels: [depth, relief, mask]
+
+training:
+  model: resnet18
+  pretrained: true
+  input_size: 224
+  epochs: 25
+  batch_size: 32
+  learning_rate: 0.0003
+  weight_decay: 0.0001
+  num_workers: 0
+  device: auto                      # auto | cpu | cuda
+  seed: 13

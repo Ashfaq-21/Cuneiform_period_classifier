@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+.pytest_cache/
+build/
+dist/
+
+# Data and model outputs (large, reproducible from commands in README)
+data/raw/
+data/processed/
+data/cache/
+data/uploads/
+data/*.ply
+artifacts/models/
+artifacts/runs/
+*.pt
+*.pth
+*.ply
+*.zip
+
+# Keep small, reviewable data files
+!data/README.md
+!data/manifest.csv
+
+# Editors / OS
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store

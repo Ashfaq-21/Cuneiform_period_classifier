@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cuneiform"
+version = "0.1.0"
+description = "Predict the historical period of cuneiform tablets from 3D scans (depth map + ResNet18)."
+readme = "README.md"
+requires-python = ">=3.10,<3.13"
+license = "MIT"
+dependencies = [
+    "numpy>=1.26,<2.3",
+    "open3d>=0.19",
+    "torch>=2.3",
+    "torchvision>=0.18",
+    "pydantic>=2.6",
+    "pyyaml>=6.0",
+    "pillow>=10.0",
+    "scikit-learn>=1.4",
+    "matplotlib>=3.8",
+    "streamlit>=1.35",
+    "tqdm>=4.66",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+
+[project.scripts]
+cuneiform = "cuneiform.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q -p no:dash"  # dash (pulled in by open3d) registers a noisy pytest plugin

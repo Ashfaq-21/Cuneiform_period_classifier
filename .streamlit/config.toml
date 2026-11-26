@@ -1,0 +1,5 @@
+[server]
+maxUploadSize = 1024  # MB; raw HeiCuBeDa scans can exceed 400 MB
+
+[browser]
+gatherUsageStats = false

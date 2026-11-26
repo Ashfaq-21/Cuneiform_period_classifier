@@ -1,0 +1,32 @@
+{
+  "manifest_rows": {
+    "Ur III": {
+      "total": 150,
+      "train": 106,
+      "val": 22,
+      "test": 22
+    },
+    "Old Babylonian": {
+      "total": 150,
+      "val": 22,
+      "train": 106,
+      "test": 22
+    }
+  },
+  "with_depth_map": {
+    "Ur III": {
+      "total": 61,
+      "val": 22,
+      "test": 22,
+      "train": 17
+    },
+    "Old Babylonian": {
+      "total": 50,
+      "val": 22,
+      "test": 22,
+      "train": 6
+    }
+  },
+  "invalid_scans": 0,
+  "cache_dir": "C:\\Users\\Admin\\Documents\\personal projects\\cuneiform\\data\\processed\\r256_c8a5742f7a"
+}
